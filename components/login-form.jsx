@@ -1,6 +1,6 @@
 'use client'
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation" // Viktigt: använd från next/navigation
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { authenticate } from '../lib/directus'
-import auth from '../lib/auth'
+// Ta bort: import { authenticate } from '../lib/directus'
+// Ta bort: import auth from '../lib/auth'
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,11 +30,27 @@ export function LoginForm() {
     const password = formData.get("password");
 
     try {
-      const data = await authenticate(email, password);
-      auth.setCredentials(data);
-      router.push("/"); // Redirect after successful login
+      // Anropa din nya API Route
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Inloggningen misslyckades");
+      }
+
+      // Omdirigera till företagssidan (eller startsidan) efter lyckad inloggning
+      router.push("/companies"); // Ändra till "/" om du vill gå till startsidan
+      router.refresh(); // Mycket viktigt! Detta laddar om serverkomponenter med de nya cookies.
+
     } catch (err) {
-      setError("Invalid email or password");
+      setError(err.message || "Felaktigt email eller lösenord");
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);
@@ -46,7 +62,7 @@ export function LoginForm() {
       <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Ange din e-post nedan för att logga in på ditt konto
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -65,9 +81,9 @@ export function LoginForm() {
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Lösenord</Label>
                 <Link href="#" className="ml-auto inline-block text-sm underline">
-                  Forgot your password?
+                  Glömt ditt lösenord?
                 </Link>
               </div>
               <Input
@@ -82,16 +98,18 @@ export function LoginForm() {
               <p className="text-sm text-red-500 text-center">{error}</p>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Login"}
+              {isLoading ? "Loggar in..." : "Logga in"}
             </Button>
+            {/* Kommentera bort eller ta bort Google-inloggningsknappen om den inte används
             <Button variant="outline" className="w-full" disabled={isLoading}>
-              Login with Google
+              Logga in med Google
             </Button>
+            */}
           </div>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            Har du inget konto?{" "}
             <Link href="#" className="underline">
-              Sign up
+              Registrera dig
             </Link>
           </div>
         </form>
